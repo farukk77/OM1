@@ -1,9 +1,7 @@
 import asyncio
 import functools
 import logging
-import json
-import os
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, List, Optional, TypeVar, Union
 
 import openai
@@ -71,54 +69,17 @@ class LLMHistoryManager:
 
         # history buffer
         self.history: List[ChatMessage] = []
-        
-        # File path for persistent storage
-        self.history_file = "conversation_history.json"
 
         # io provider
         self.io_provider = IOProvider()
-        
-        # Load history from disk on initialization
-        self.load_history()
-
-    def save_history(self):
-        """
-        Saves the current chat history to a JSON file.
-        Requested in Issue #985 for persistence.
-        """
-        try:
-            with open(self.history_file, 'w', encoding='utf-8') as f:
-                # Convert dataclass objects to dicts for JSON serialization
-                data = [asdict(msg) for msg in self.history]
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            logging.debug(f"History saved to {self.history_file}")
-        except Exception as e:
-            logging.error(f"Failed to save history: {e}")
-
-    def load_history(self):
-        """
-        Loads chat history from the JSON file if it exists.
-        """
-        if not os.path.exists(self.history_file):
-            return
-
-        try:
-            with open(self.history_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                # Convert dicts back to ChatMessage objects
-                self.history = [ChatMessage(**msg) for msg in data]
-            logging.info(f"Loaded {len(self.history)} messages from history file.")
-        except Exception as e:
-            logging.error(f"Failed to load history: {e}")
-            # Start with empty history if load fails
-            self.history = []
 
     async def summarize_messages(self, messages: List[ChatMessage]) -> ChatMessage:
         """
         Summarize a list of messages using the OpenAI API.
         """
-        # Set timeout for API call
-        timeout = 10.0  # seconds
+        # FIX: Timeout süresi 10.0 saniyeden 30.0 saniyeye çıkarıldı (Issue #984)
+        # Özetleme işlemi sırasında API yavaş cevap verirse veri kaybı olmaması için süre uzatıldı.
+        timeout = 30.0 
 
         try:
             if not messages:
@@ -234,11 +195,6 @@ class LLMHistoryManager:
                         del messages[:num_summarized]
                         messages.insert(0, summary_message)
                         logging.info("Successfully summarized the state")
-                        # Save history after summarization update
-                        # Note: 'self' is not available here in the closure directly if not passed,
-                        # but since this is a method, we can't easily access 'self.save_history()'
-                        # without binding. However, history persistence is critical on append,
-                        # which is handled in update_history wrapper.
                     elif (
                         summary_message.role == "system"
                         and "Error" in summary_message.content
@@ -246,8 +202,9 @@ class LLMHistoryManager:
                         logging.error(
                             f"Summarization failed: {summary_message.content}"
                         )
-                        messages.pop(0) if messages else None
-                        messages.pop(0) if messages else None
+                        # FIX: Issue #984 - Kritik Düzeltme
+                        # Hata durumunda veri silen 'messages.pop(0)' satırları kaldırıldı.
+                        # Artık hata olsa bile hafıza korunuyor ve sonraki turda tekrar deneniyor.
                     else:
                         logging.warning(f"Unexpected summary result: {summary_message}")
                 except asyncio.CancelledError:
@@ -256,8 +213,7 @@ class LLMHistoryManager:
                     logging.error(
                         f"Error in summary task callback: {type(e).__name__}: {e}"
                     )
-                    messages.pop(0) if messages else None
-                    messages.pop(0) if messages else None
+                    # Hata durumunda hiçbir şey yapma, veri korunsun.
 
             self._summary_task.add_done_callback(callback)
 
@@ -265,8 +221,6 @@ class LLMHistoryManager:
             logging.warning("Summary task creation cancelled")
         except Exception as e:
             logging.error(f"Error starting summary task: {type(e).__name__}: {e}")
-            messages.pop(0) if messages else None
-            messages.pop(0) if messages else None
 
     def get_messages(self) -> List[dict]:
         """
@@ -313,9 +267,6 @@ class LLMHistoryManager:
 
                 logging.debug(f"Inputs: {inputs}")
                 self.history_manager.history.append(inputs)
-                
-                # Save history immediately after receiving input
-                self.history_manager.save_history()
 
                 messages = self.history_manager.get_messages()
                 logging.debug(f"messages:\n{messages}")
@@ -343,9 +294,6 @@ class LLMHistoryManager:
                     self.history_manager.history.append(
                         ChatMessage(role="assistant", content=action_message)
                     )
-                    
-                    # Save history immediately after taking action
-                    self.history_manager.save_history()
 
                     if (
                         self.history_manager.config.history_length > 0
@@ -355,9 +303,6 @@ class LLMHistoryManager:
                         await self.history_manager.start_summary_task(
                             self.history_manager.history
                         )
-                        # Note: Summary task updates history asynchronously.
-                        # Ideally, save_history() should also be called when summary completes in the callback,
-                        # but calling it here ensures at least the raw action is saved.
 
                 self.history_manager.frame_index += 1
 
@@ -366,4 +311,3 @@ class LLMHistoryManager:
             return wrapper
 
         return decorator
-       
