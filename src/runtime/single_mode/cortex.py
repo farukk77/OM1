@@ -14,7 +14,8 @@ from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 from runtime.single_mode.config import RuntimeConfig, load_config
 from simulators.orchestrator import SimulatorOrchestrator
-
+from runtime.single_node.hot_reload import HotReloadManager
+from utils.config_watcher import ConfigFileWatcher
 
 class CortexRuntime:
     """
@@ -49,23 +50,31 @@ class CortexRuntime:
     ):
         """
         Initialize the CortexRuntime with provided configuration.
-
-        Parameters
-        ----------
-        config : RuntimeConfig
-            Configuration object for the runtime.
-        config_name : str
-            Name of the configuration file for hot-reload functionality.
-        hot_reload : bool
-            Whether to enable hot-reload functionality. (default: True)
-        check_interval : float
-            Interval in seconds between config file checks for hot-reload. (default: 60.0)
+        Now supports event-driven hot-reload using Watchdog.
         """
         self.config = config
         self.config_name = config_name
         self.hot_reload = hot_reload
-        self.check_interval = check_interval
+        
+        # 'check_interval' is deprecated (Watchdog is event-driven), 
+        # but kept in parameters for backward compatibility.
+        # self.check_interval = check_interval 
 
+        # --- NEW WATCHDOG SYSTEM ---
+        if self.hot_reload:
+            logging.info("Initializing Hot-Reload with Watchdog...")
+            # 1. Initialize the Hot-Reload Manager
+            self.hot_reload_manager = HotReloadManager(self.config)
+            
+            # 2. Initialize the File Watcher
+            self.file_watcher = ConfigFileWatcher(
+                config_path=self.config_name,
+                callback=self.trigger_hot_reload # Callback triggered on file change
+            )
+            self.file_watcher.start()
+        # ---------------------------
+
+        # --- EXISTING COMPONENTS ---
         self.fuser = Fuser(config)
         self.action_orchestrator = ActionOrchestrator(config)
         self.simulator_orchestrator = SimulatorOrchestrator(config)
@@ -74,8 +83,7 @@ class CortexRuntime:
         self.io_provider = IOProvider()
         self.config_provider = ConfigProvider()
 
-        self.last_modified: float = 0.0
-        self.config_watcher_task: Optional[asyncio.Task] = None
+        # --- TASK MANAGERS ---
         self.input_listener_task: Optional[asyncio.Task] = None
         self.simulator_task: Optional[Union[asyncio.Task, asyncio.Future]] = None
         self.action_task: Optional[Union[asyncio.Task, asyncio.Future]] = None
@@ -84,12 +92,31 @@ class CortexRuntime:
 
         self._is_reloading = False
 
-        if self.hot_reload:
-            self.config_path = self._create_runtime_config_file()
-            self.last_modified = self._get_file_mtime()
-            logging.info(
-                f"Hot-reload enabled for runtime config: {self.config_path} (check interval: {check_interval}s)"
-            )
+    def trigger_hot_reload(self):
+        """
+        Callback function triggered by Watchdog when the configuration file changes.
+        """
+        logging.info("Configuration file change detected via Watchdog.")
+        try:
+            # Safely read the new configuration file
+            with open(self.config_name, 'r', encoding='utf-8') as f:
+                new_config = json5.load(f)
+            
+            # Check the type of change using the manager
+            action = self.hot_reload_manager.check_changes(new_config)
+            
+            if action == 'RESTART':
+                logging.warning("Critical changes detected (e.g., API Key, Model). System restart required.")
+            elif action == 'RELOAD':
+                logging.info("Applying hot-reload for non-critical changes...")
+                self.config = new_config
+                self.hot_reload_manager.update_config(new_config)
+                # Optional: self.refresh_agents() could be called here
+            else:
+                logging.info("No effective change detected.")
+                
+        except Exception as e:
+            logging.error(f"Hot-reload failed: {e}")
 
     def _get_runtime_config_path(self) -> str:
         """
