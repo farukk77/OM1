@@ -1,0 +1,68 @@
+# Open issues snapshot (OpenMind/OM1)
+
+Source: GitHub Issues page scraping via Playwright.
+
+- #2207 bug: VLM input plugins crash on dropped camera frames (ret not checked)
+- #2202 [BUG] Multi-mode runtime: cross-platform file write failure and missing transition recovery
+- #2176 Docs / Evaluation: speak action behavior in agent_actions
+- #2145 emergency_call_plugin
+- #2090 Feature Request: Unified Hardware Permission System: Solving Device Access Inconsistency for Node Operators
+- #1997 feat: Conversation History Export Tool
+- #1933 feat: Add SafetyMonitorProvider for robot safety monitoring and emergency stop
+- #1824 [BUG] Potential Bug in decode_eth_response in src/inputs/plugins/ethereum_governance.py
+- #1792 bug fixes which i found step by steps
+- #1771 [Bug] Thread safety issues, unused variable, and deprecated logging in rf_mapper.py
+- #1731 Feature: Export conversation history to file (JSON/Markdown)
+- #1700 feat: Implement robust JSON extraction and error handling for LLM responses
+- #1620 [BUG]WebSim state broadcasting fails inside Docker containers due to an event loop conflict, preventing the frontend from receiving real-time status updates
+- #1608 [Bug] GPS Fabric Connector: Logic errors and missing error handling
+- #1594 Technical review: person_follow mode lifecycle, polling and enrollment logic
+- #1592 Critical bugs in person_follow mode (config parsing, lifecycle, async handling)
+- #1549 Fix critical bugs in Media Server documentation
+- #1529 Feature: OM1 Marketplace with P2P Sales, Joint Ownership, and Rental System for Robots
+- #1518 Robot Behavior: Add "Thinking" Pause/Gesture When Confused
+- #1486 [BUG] API Key Deletion Causes Complete Loss of Machine Registration and Credit History
+- #1468 [Enhancement] Preserve all LLM function call parameters for multi-field actions
+- #1449 Add night mode for website
+- #1446 Provide feature to add name or note for API when creating
+- #1372 feat: Skip LLM calls when no meaningful inputs are available to reduce credit consumptio
+- #1368 Observability & Logging Dashboard
+- #1222 Suggestions to improve code security and development quality
+- #1218 [BUG]502 Gateway Logic Errors and Action Loop Inconsistency
+- #1204 [BUG]Latency, Context Bloat, and Setup Optimization for Apple Silicon
+- #1183 代码逻辑错误 (Code Logic Errors)
+- #1177 Research Insight: Modular AI Runtime (OM1) vs Monolithic Robotics Stacks
+- #1176 macOS: Camera permission requirement missing in Getting Started guide
+- #1118 [Config] Default spot profile fails on generic hardware (Missing Audio/ASR fallback)
+- #1004 feat(ASR): Add automatic language detection support
+- #999 Tracking Conversation in Open Mind Portal
+- #989 How to change ASR/TTS language to Chinese?
+- #985 Save the conversation history to disk and reload it if it is exists
+- #984 Improve hot-reload configs
+- #974 Add System Health Monitor Tool (Battery & Temperature)
+- #961 Feature Request: Add a Crypto Trading Dog Agent Example.
+- #957 Does it support Intel Mac?
+- #954 [Security] FABRIC Submit API accepts unvalidated mock data
+- #950 Proposal: Agent execution tracing and replay for OM1
+- #948 Bug: Ethereum Blockchain Rules Loading Fails with 503 Error During Agent Run
+- #934 WSL: Audio input not detected for GoogleASRInput (workaround confirmed)
+- #932 Backpack wallet QR connection does not complete on FABRIC dashboard
+- #922 Add a capability introspection + negotiation layer
+- #918 HTTP 500 Error when uploading PDF to RAG Data Source
+- #881 Simple Setup and Diagnostics for Local Agents
+- #824 Ai
+- #737 feat/fix: Add robust text message output and validation in single-mode cortex
+- #707 OM1 adapted to the low-cost OpenARM hardware platform
+- #682 [BUG] How correclty config the Unitree G1 configuration with GoogleASR function of "microphone_device_id"
+- #636 Real-time Data Anonymization API for Enhanced Privacy
+- #632 Real-Time Error Monitoring and Auto-Recovery System for OM1 Agents
+- #629 [API Proposal] Prioritized Task Queue API for Enhanced Agent Coordination
+- #612 Run OpenMind Robots on Mobile Devices
+- #609 feat : Proposal - Data integration and Analytics support for OM1
+- #537 [FEATURE] G1 Multimodal Robot Enhancement: Health, Visual Feedback & Voice Control
+- #524 [FEATURE] Data Quality and Anomaly Detection Layer for Multimodal Robot Inputs
+- #490 [FEATURE] DYNAMIC KNOWLEDGE INTEGRATION LAYER [DKIL]
+- #484 [Feature] Multi-Robot Learning Network with Web3 Marketplace
+- #483 [Feature] X402 Integration for Autonomous Robot Payments
+- #366 [Bounty] Smart device communication
+- #365 [Bounty] New input plugins for integrating new sensors

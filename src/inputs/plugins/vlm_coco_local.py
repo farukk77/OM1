@@ -41,7 +41,9 @@ def check_webcam(index_to_check):
     cap = cv2.VideoCapture(index_to_check)  # 0 is the default camera index
     if not cap.isOpened():
         logging.info(f"ERROR: COCO did not find cam: {index_to_check}")
+        cap.release()
         return False
+    cap.release()
     logging.info(f"COCO found cam: {index_to_check}")
     return True
 
@@ -119,6 +121,12 @@ class VLM_COCO_Local(FuserInput[VLM_COCO_LocalConfig, Optional[np.ndarray]]):
 
         if self.have_cam and self.cap is not None:
             ret, frame = self.cap.read()
+            if not ret or frame is None:
+                logging.warning(
+                    "COCO camera frame read failed (camera_index=%s)", self.camera_index
+                )
+                return None
+
             # logging.info(f"VLM_COCO_Local frame: {frame}")
             return frame
 
